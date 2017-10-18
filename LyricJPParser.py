@@ -89,7 +89,7 @@ hiragana = {'あ':'아', 'い':'이', 'う':'우', 'え':'에', 'お':'오', \
 			'ら':'라', 'り':'리', 'る':'루', 'れ':'레', 'ろ':'로', \
 			'わ':'와', 								'を':'오'}
 
-katagana = {'ア':'아', 'イ':'이', 'ウ':'우', 'エ':'에', 'オ':'오', \
+katakana = {'ア':'아', 'イ':'이', 'ウ':'우', 'エ':'에', 'オ':'오', \
 			'カ':'카', 'キ':'키', 'ク':'쿠', 'ケ':'케', 'コ':'코', \
 			'ガ':'가', 'ギ':'기', 'グ':'구', 'ゲ':'게', 'ゴ':'고', \
 			'サ':'사', 'シ':'시', 'ス':'스', 'セ':'세', 'ソ':'소', \
@@ -110,7 +110,7 @@ sp = {'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ', 'ょ', 'ゅ', 'っ', 'ん' \
 
 iterlyric = iter(lyric)
 for l in iterlyric:
-	if any(key in l for key in hiragana.keys()) or any(key in l for key in katagana.keys()):
+	if any(key in l for key in hiragana.keys()) or any(key in l for key in katakana.keys()):
 		# 요음 처리 부분. 예외 발생시 이 부분에 추가.
 		if any(key2 in l for key2 in sp):
 			print('yoon')
@@ -120,8 +120,8 @@ for l in iterlyric:
 		k = next(iterlyric)
 		for ch in hiragana.keys():
 			l2 = l2.replace(ch, hiragana[ch])
-		for ch in katagana.keys():
-			l2 = l2.replace(ch, katagana[ch])
+		for ch in katakana.keys():
+			l2 = l2.replace(ch, katakana[ch])
 		
 		diff = difflib.ndiff(l2, p)
 
