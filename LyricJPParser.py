@@ -151,8 +151,9 @@ print("%c%c%c"%(choToJa(cho)+0x3131, jung+0x3131, choToJa(jongToCho(jong))+0x313
 print("%c"%cast(cho, jung, jong))
 '''
 
-lyric = ['戸惑う  言葉  与えられても', '토마도우 코토바 아타에라레테모', '뜻밖의 말을 듣더라도', \
-		 '自分の  心  ただ上の  空', '지분노 코코로 타다 우와노 소라', '나의 마음 속에선 그저 흘러들을 뿐']
+#lyric = ['戸惑う  言葉  与えられても', '토마도우 코토바 아타에라레테모', '뜻밖의 말을 듣더라도']
+#lyric = ['こんな  時間に  私はいるの?', '콘나 지칸니 와타시와 이루노?', '이런 세상에 나는 왜 존재하는 걸까?']
+#lyric = ['自分の  心  ただ上の  空', '지분노 코코로 타다 우와노 소라', '나의 마음 속에선 그저 흘러들을 뿐']
 iterlyric = iter(lyric)
 for l in iterlyric:
 	if any(key in l for key in hiragana.keys()) or any(key in l for key in katakana.keys()):
@@ -167,45 +168,127 @@ for l in iterlyric:
 			l2 = l2.replace(ch, hiragana[ch])
 		for ch in katakana.keys():
 			l2 = l2.replace(ch, katakana[ch])
+		length = len(l2)
+		i = 0
+		while i <length:
+			if l2[i] == 'ん' and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				word = chr(cast(cho, jung, 4))
+				l2 = l2[:i-1] + word + l2[i+1:]
+				length -= 1
+				i -= 1
+			i += 1
+		spacel2 = []
+		for i in range(len(l2)):
+			if l2[i] == ' ':
+				spacel2.append(i)
+		l2 = l2.replace(' ', '')
+		spacep = []
+		for i in range(len(p)):
+			if p[i] == ' ':
+				spacep.append(i)
+		p = p.replace(' ', '')
 		
 		diff = difflib.ndiff(l2, p)
+		if 'は' in l:	# Heuristic for wa and ha
+			for i in range(len(l)):
+				if l[i] == 'は':
+					l3 = l[:i] + 'わ' + l[i+1:]
+					for ch in hiragana.keys():
+						l3 = l3.replace(ch, hiragana[ch])
+					for ch in katakana.keys():
+						l2 = l2.replace(ch, katakana[ch])
+					length = len(l3)
+					i = 0
+					while i <length:
+						if l3[i] == 'ん' and i > 0:
+							cho, jung, jong = decast(l2[i-1])
+							word = chr(cast(cho, jung, 4))
+							l3 = l3[:i-1] + word + l3[i+1:]
+							length -= 1
+							i -= 1
+						i += 1
+
+					spacel3 = []
+					for i in range(len(l3)):
+						if l3[i] == ' ':
+							spacel3.append(i)
+					l3 = l3.replace(' ','')
+					diff2 = difflib.ndiff(l3, p)
+					cnt1 = 0
+					cnt2 = 0
+					for e in list(diff):
+						if e[0] == ' ':
+							pass
+						cnt1 += 1
+					for e in list(diff2):
+						if e[0] == ' ':
+							pass
+						cnt2 += 1
+					if cnt2 < cnt1:
+						l2 = l3
+						spacel2 = spacel3
+		
+		for sploc in spacel2:
+			l2 = l2[:sploc] + ' ' + l2[sploc:]
+		for sploc in spacep:
+			p = p[:sploc] + ' ' + p[sploc:]
+		diff = difflib.ndiff(l2, p)
+			
 		pos = 0
-		punc = ''
-		punc2 = ''
+		sign = 0	# 0 for none, 1 for -, 2 for +
+		punck = ''
+		puncj = ''
+		listk = []
+		listj = []
+		
 		try:
 			for d in diff:
-				if d[0] == ' ' and punc != '':
-					for word in punc:
-						cho, jung, jong = decast(word)
-						if jong == 4:	# ㄴ 받침
-							word = chr(cast(cho, jung, 0))
-						if jong == 19:	# ㅅ 받침
-							word = chr(cast(cho, jung, 0))
-						for key in hiragana:
-							if hiragana[key] == word:
-								punc2 += key
-						if jong == 4:	# ㄴ 받침
-							punc2 += 'ん'
-					l = l[:pos+1] + '(' + punc2 + ')' + l[pos+1:]
-					pos += (len(punc2)+2)
-					punc = ''
-					punc2 = ''
-				elif d[2] == ' ':
+				if d[0] == ' ' or d[2] == ' ':
+					sign = 0
+					if punck != '':
+						listk.append(punck)	# Dump former block
+						punck = ''
+					if puncj != '':
+						listj.append(puncj)	# Dump former block
+						puncj = ''
 					pass
 				elif d[0] == '-':
-					pos += l[pos:].find(d[2])
+					if sign != 1:	# New - block begins
+						if puncj != '':
+							listj.append(puncj)	# Dump former block
+							puncj = ''
+					puncj += d[2]
+					sign = 1
 				elif d[0] == '+':
-					temp = ''
-					punc += d[2]
-
-			if punc != '':
-				for key in hiragana:
-					if hiragana[key] == d[2]:
-						punc2 += key
-				l = l[:pos+1] + '(' + punc2 + ')' + l[pos+1:]
-				pos += (len(punc2)+2)
-				punc = ''
-				punc2 = ''
+					if sign != 2:	# New + block begins
+						if punck != '':
+							listk.append(punck)	# Dump former block
+							punck = ''
+					sign = 2
+					punck += d[2]
+			if punck != '':
+				listk.append(punck)	# Dump former block
+				punck = ''
+			if puncj != '':
+				listj.append(puncj)	# Dump former block
+				puncj = ''
+			for punck, puncj in zip(listk, listj):
+				pwrite = ''
+				pos += (l[pos:].find(puncj[0]) + len(puncj) - 1)
+				for word in punck:
+					cho, jung, jong = decast(word)
+					if jong == 4:	# ㄴ 받침
+						word = chr(cast(cho, jung, 0))
+					elif jong == 19:	# ㅅ 받침
+						word = chr(cast(cho, jung, 0))
+					for key in hiragana:
+						if hiragana[key] == word:
+							pwrite += key
+					if jong == 4:	# ㄴ 받침
+						pwrite += 'ん'
+				l = l[:pos+1] + '(' + pwrite + ')' + l[pos+1:]
+				pos += (len(pwrite)+2)
 			
 		except TypeError:
 			pass
