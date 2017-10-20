@@ -121,11 +121,14 @@ def decast(hangul):
 
 # Cast jaeum to choseong
 def jaToCho(ja):
+	# ㄱ, ㄲ, ㄴ, ㄷ, ㄸ, ㄹ, ㅁ, ㅂ, ㅃ, ㅅ, ㅆ, ㅇ, ㅈ, ㅉ, ㅊ, ㅋ, ㅌ, ㅍ, ㅎ
 	dic = {0:0, 1:1, 3:2, 6:3, 7:4, 8:5, 16:6, 17:7, 18:8, 20:9, 21:10, 22:11, 23:12, 24:13, 25:14, 26:15, 27:16, 28:17, 29:18}
 	return dic[ja]
 
 # Cast choseong to jongseong
 def choToJong(ja):
+	# ㄱ, ㄲ, ㄳ, ㄴ, ㄵ, ㄶ, ㄷ, ㄹ, ㄺ, ㄻ, ㄼ, ㄽ, ㄾ, ㄿ, ㅀ, ㅁ, ㅂ, ㅄ, ㅅ, ㅆ, ㅇ, ㅈ, ㅊ, ㅋ, ㅌ, ㅍ, ㅎ
+	# Index starts from 1.
 	dic = {0:1, 1:2, 2:4, 3:7, 5:8, 6:16, 7:17, 9:19, 10:20, 11:21, 12:22, 14:23, 15:24, 16:25, 17:26, 18:27}
 	return dic[ja]
 
@@ -148,6 +151,8 @@ print("%c%c%c"%(choToJa(cho)+0x3131, jung+0x3131, choToJa(jongToCho(jong))+0x313
 print("%c"%cast(cho, jung, jong))
 '''
 
+lyric = ['戸惑う  言葉  与えられても', '토마도우 코토바 아타에라레테모', '뜻밖의 말을 듣더라도', \
+		 '自分の  心  ただ上の  空', '지분노 코코로 타다 우와노 소라', '나의 마음 속에선 그저 흘러들을 뿐']
 iterlyric = iter(lyric)
 for l in iterlyric:
 	if any(key in l for key in hiragana.keys()) or any(key in l for key in katakana.keys()):
@@ -167,22 +172,24 @@ for l in iterlyric:
 		pos = 0
 		punc = ''
 		punc2 = ''
-		isTT = False	# っ 발음이 있는지 체크
 		try:
 			for d in diff:
 				if d[0] == ' ' and punc != '':
-					if isTT == True:
-						cho, jung, jong = decast(punc[-1])
-						punc = punc[:-1] + chr(cast(cho, jung, 0))
 					for word in punc:
+						cho, jung, jong = decast(word)
+						if jong == 4:	# ㄴ 받침
+							word = chr(cast(cho, jung, 0))
+						if jong == 19:	# ㅅ 받침
+							word = chr(cast(cho, jung, 0))
 						for key in hiragana:
 							if hiragana[key] == word:
 								punc2 += key
+						if jong == 4:	# ㄴ 받침
+							punc2 += 'ん'
 					l = l[:pos+1] + '(' + punc2 + ')' + l[pos+1:]
 					pos += (len(punc2)+2)
 					punc = ''
 					punc2 = ''
-					isTT = False
 				elif d[2] == ' ':
 					pass
 				elif d[0] == '-':
@@ -190,14 +197,8 @@ for l in iterlyric:
 				elif d[0] == '+':
 					temp = ''
 					punc += d[2]
-				if d[2] == 'っ':
-					pos -= 1
-					isTT = True
 
 			if punc != '':
-				if isTT == True:
-					cho, jung, jong = decast(punc[-1])
-					punc = punc[:-1] + str(cast(cho, jung, 0))
 				for key in hiragana:
 					if hiragana[key] == d[2]:
 						punc2 += key
@@ -205,14 +206,13 @@ for l in iterlyric:
 				pos += (len(punc2)+2)
 				punc = ''
 				punc2 = ''
-				isTT = False
 			
 		except TypeError:
 			pass
 		
 		print(l)
-#		print(l2)
-#		print(p)
+		print(l2)
+		print(p)
 		print(k)
 		print()
 		
