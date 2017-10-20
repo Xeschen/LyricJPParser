@@ -108,6 +108,46 @@ katakana = {'ア':'아', 'イ':'이', 'ウ':'우', 'エ':'에', 'オ':'오', \
 sp = {'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ', 'ょ', 'ゅ', 'っ', 'ん' \
 	  'ァ', 'ィ', 'ゥ', 'ェ', 'ォ', 'ョ', 'ュ', 'ッ', 'ン'}
 
+# Cast Hangul with three arguments
+def cast(cho, jung, jong):
+	return cho*588 + (jung-30)*28 + jong + 0xAC00
+
+def decast(hangul):
+	hangul = ord(hangul)
+	cho = (hangul - 0xAC00) // 588
+	jung = (((hangul - 0xAC00) % 588) // 28 + 30)
+	jong = hangul - cho*588 - (jung-30)*28 - 0xAC00
+	return cho, jung, jong
+
+# Cast jaeum to choseong
+def jaToCho(ja):
+	dic = {0:0, 1:1, 3:2, 6:3, 7:4, 8:5, 16:6, 17:7, 18:8, 20:9, 21:10, 22:11, 23:12, 24:13, 25:14, 26:15, 27:16, 28:17, 29:18}
+	return dic[ja]
+
+# Cast choseong to jongseong
+def choToJong(ja):
+	dic = {0:1, 1:2, 2:4, 3:7, 5:8, 6:16, 7:17, 9:19, 10:20, 11:21, 12:22, 14:23, 15:24, 16:25, 17:26, 18:27}
+	return dic[ja]
+
+# Cast choseong to jaeum
+def choToJa(cho):
+	choDic = {0:0, 1:1, 2:3, 3:6, 4:7, 5:8, 6:16, 7:17, 8:18, 9:20, 10:21, 11:22, 12:23, 13:24, 14:25, 15:26, 16:27, 17:28, 18:29}
+	return choDic[cho]
+
+# Cast jongseong to choseong
+def jongToCho(jong):
+	jongDic = {1:0, 2:1, 4:2, 7:3, 8:5, 16:6, 17:7, 19:9, 20:10, 21:11, 22:12, 23:14, 24:15, 25:16, 26:17, 27:18}
+	return jongDic[jong]
+
+'''
+print(ord('왓'))
+cho, jung, jong = decast('왓')
+print(cho, jung, jong)
+print("%c%c%c"%(cho+0x3131, jung+0x3131, jong+0x3131))
+print("%c%c%c"%(choToJa(cho)+0x3131, jung+0x3131, choToJa(jongToCho(jong))+0x3131))
+print("%c"%cast(cho, jung, jong))
+'''
+
 iterlyric = iter(lyric)
 for l in iterlyric:
 	if any(key in l for key in hiragana.keys()) or any(key in l for key in katakana.keys()):
@@ -124,33 +164,55 @@ for l in iterlyric:
 			l2 = l2.replace(ch, katakana[ch])
 		
 		diff = difflib.ndiff(l2, p)
-
 		pos = 0
 		punc = ''
+		punc2 = ''
+		isTT = False	# っ 발음이 있는지 체크
 		try:
 			for d in diff:
 				if d[0] == ' ' and punc != '':
-					l = l[:pos+1] + '(' + punc + ')' + l[pos+1:]
-					pos += (len(punc)+2)
+					if isTT == True:
+						cho, jung, jong = decast(punc[-1])
+						punc = punc[:-1] + chr(cast(cho, jung, 0))
+					for word in punc:
+						for key in hiragana:
+							if hiragana[key] == word:
+								punc2 += key
+					l = l[:pos+1] + '(' + punc2 + ')' + l[pos+1:]
+					pos += (len(punc2)+2)
 					punc = ''
+					punc2 = ''
+					isTT = False
 				elif d[2] == ' ':
 					pass
 				elif d[0] == '-':
 					pos += l[pos:].find(d[2])
 				elif d[0] == '+':
 					temp = ''
-					for key in hiragana:
-						if hiragana[key] == d[2]:
-							punc += key
+					punc += d[2]
+				if d[2] == 'っ':
+					pos -= 1
+					isTT = True
+
 			if punc != '':
-				l = l[:pos+1] + '(' + punc + ')' + l[pos+1:]
-				pos += (len(punc)+2)
+				if isTT == True:
+					cho, jung, jong = decast(punc[-1])
+					punc = punc[:-1] + str(cast(cho, jung, 0))
+				for key in hiragana:
+					if hiragana[key] == d[2]:
+						punc2 += key
+				l = l[:pos+1] + '(' + punc2 + ')' + l[pos+1:]
+				pos += (len(punc2)+2)
 				punc = ''
+				punc2 = ''
+				isTT = False
 			
 		except TypeError:
 			pass
 		
 		print(l)
+#		print(l2)
+#		print(p)
 		print(k)
 		print()
 		
