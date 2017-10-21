@@ -66,7 +66,7 @@ def extractLyric(filename):
 	text = r.text
 	return text
 
-text = extractLyric("C:\Bad apple.mp3")
+text = extractLyric("C:\yoiyami.mp3")
 p = re.compile("[\[]\d{2}[:]\d{2}[.]\d{2}[\]](.*?)[;]")
 m = p.findall(text)
 lyric = []
@@ -81,13 +81,31 @@ hiragana = {'あ':'아', 'い':'이', 'う':'우', 'え':'에', 'お':'오', \
 			'た':'타', 'ち':'치', 'つ':'츠', 'て':'테', 'と':'토', \
 			'だ':'다',					  'で':'데', 'ど':'도', \
 			'な':'나', 'に':'니', 'ぬ':'누', 'ね':'네', 'の':'노', \
-			'は':'하', 'ひ':'히', 'ふ':'후', 'へ':'헤', 'ほ':'호', \
+			'は':'와', 'ひ':'히', 'ふ':'후', 'へ':'에', 'ほ':'호', \
 			'ば':'바', 'び':'비', 'ぶ':'부', 'べ':'베', 'ぼ':'보', \
 			'ぱ':'파', 'ぴ':'피', 'ぷ':'푸', 'ぺ':'페', 'ぽ':'포', \
 			'ま':'마', 'み':'미', 'む':'무', 'め':'메', 'も':'모', \
 			'や':'야',			'ゆ':'유',			'よ':'요', \
 			'ら':'라', 'り':'리', 'る':'루', 'れ':'레', 'ろ':'로', \
-			'わ':'와', 								'を':'오'}
+			'わ':'와', 								'を':'오', \
+			'、':',', '？':'?', '！':'!'}
+
+hiratabl = {'아':'あ', '이':'い', '우':'う', '에':'え', '오':'お', \
+			'카':'か', '키':'き', '쿠':'く', '케':'け', '코':'こ', \
+			'가':'が', '기':'ぎ', '구':'ぐ', '게':'げ', '고':'ご', \
+			'사':'さ', '시':'し', '스':'す', '세':'せ', '소':'そ', \
+			'자':'ざ', '지':'じ', '즈':'ず', '제':'ぜ', '조':'ぞ', \
+			'타':'た', '치':'ち', '츠':'つ', '테':'て', '토':'と', \
+			'다':'だ',					  '데':'で', '도':'ど', \
+			'나':'な', '니':'に', '누':'ぬ', '네':'ね', '노':'の', \
+			'하':'は', '히':'ひ', '후':'ふ', '헤':'へ', '호':'ほ', \
+			'바':'ば', '비':'び', '부':'ぶ', '베':'べ', '보':'ぼ', \
+			'파':'ぱ', '피':'ぴ', '푸':'ぷ', '페':'ぺ', '포':'ぽ', \
+			'마':'ま', '미':'み', '무':'む', '메':'め', '모':'も', \
+			'야':'や',			'유':'ゆ',			'요':'よ', \
+			'라':'ら', '리':'り', '루':'る', '레':'れ', '로':'ろ', \
+			'와':'わ', 										}
+
 
 katakana = {'ア':'아', 'イ':'이', 'ウ':'우', 'エ':'에', 'オ':'오', \
 			'カ':'카', 'キ':'키', 'ク':'쿠', 'ケ':'케', 'コ':'코', \
@@ -157,9 +175,6 @@ print("%c"%cast(cho, jung, jong))
 iterlyric = iter(lyric)
 for l in iterlyric:
 	if any(key in l for key in hiragana.keys()) or any(key in l for key in katakana.keys()):
-		# 요음 처리 부분. 예외 발생시 이 부분에 추가.
-		if any(key2 in l for key2 in sp):
-			print('yoon')
 
 		l2 = l
 		p = next(iterlyric)
@@ -171,12 +186,74 @@ for l in iterlyric:
 		length = len(l2)
 		i = 0
 		while i <length:
-			if l2[i] == 'ん' and i > 0:
+			if (l2[i] == 'ん' or l2[i] == 'ン') and i > 0:
 				cho, jung, jong = decast(l2[i-1])
-				word = chr(cast(cho, jung, 4))
+				word = chr(cast(cho, jung, 4))	# ㄴ 받침
 				l2 = l2[:i-1] + word + l2[i+1:]
 				length -= 1
 				i -= 1
+			elif (l2[i] == 'っ' or l2[i] == 'ッ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				word = chr(cast(cho, jung, 19))	# ㅅ 받침
+				l2 = l2[:i-1] + word + l2[i+1:]
+				length -= 1
+				i -= 1
+			elif (l2[i] == 'ぁ' or l2[i] == 'ァ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 30:	# ex) さぁ
+					word = '아'
+					l2 = l2[:i] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+				elif jung == 48:	# ex) ふぁ
+					word = chr(cast(cho, 32, 0))	# ㅡ 가 ㅏ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+			elif (l2[i] == 'ぃ' or l2[i] == 'ィ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 43:	# ex) フイ
+					word = chr(cast(cho, 46, 0))	# ㅡ가 ㅟ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+			elif (l2[i] == 'ぉ' or l2[i] == 'ォ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 43:	# ex) フォ
+					word = chr(cast(cho, 38, 0))	# ㅡ가 ㅟ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+			elif (l2[i] == 'ぅ' or l2[i] == 'ゥ') and i > 0:
+				l2 = l2[:i] + l2[i+1:]
+				length -= 1
+				i -= 1
+			elif (l2[i] == 'ぇ' or l2[i] == 'ェ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 43:	# ex) フェ
+					word = chr(cast(cho, 5, 0))	# ㅡ가 ㅔ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+			elif (l2[i] == 'ょ' or l2[i] == 'ョ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 43:	# ex) フョ
+					word = chr(cast(cho, 44, 0))	# ㅡ가 ㅛ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+				elif jung == 50:	# ex) ショ
+					word = chr(cast(cho, 44, 0))	# ㅣ가 ㅛ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
+			elif (l2[i] == 'ゅ' or l2[i] == 'ュ') and i > 0:
+				cho, jung, jong = decast(l2[i-1])
+				if jung == 50:	# ex) しゅ
+					word = chr(cast(cho, 47, 0))	# ㅣ가 ㅠ로 변화
+					l2 = l2[:i-1] + word + l2[i+1:]
+					length -= 1
+					i -= 1
 			i += 1
 		spacel2 = []
 		for i in range(len(l2)):
@@ -190,6 +267,8 @@ for l in iterlyric:
 		p = p.replace(' ', '')
 		
 		diff = difflib.ndiff(l2, p)
+
+		'''
 		if 'は' in l:	# Heuristic for wa and ha
 			for i in range(len(l)):
 				if l[i] == 'は':
@@ -228,13 +307,14 @@ for l in iterlyric:
 					if cnt2 < cnt1:
 						l2 = l3
 						spacel2 = spacel3
-		
-		for sploc in spacel2:
-			l2 = l2[:sploc] + ' ' + l2[sploc:]
-		for sploc in spacep:
-			p = p[:sploc] + ' ' + p[sploc:]
-		diff = difflib.ndiff(l2, p)
-			
+						'''
+
+#		for sploc in spacel2:
+#			l2 = l2[:sploc] + ' ' + l2[sploc:]
+#		for sploc in spacep:
+#			p = p[:sploc] + ' ' + p[sploc:]
+#		diff = difflib.ndiff(l2, p)
+
 		pos = 0
 		sign = 0	# 0 for none, 1 for -, 2 for +
 		punck = ''
@@ -277,16 +357,30 @@ for l in iterlyric:
 				pwrite = ''
 				pos += (l[pos:].find(puncj[0]) + len(puncj) - 1)
 				for word in punck:
+					follower = False
 					cho, jung, jong = decast(word)
+					if jung == 32:	# ㅑ
+						if cho != 11 or jong != 0:	# や가 아닌 경우
+							word = chr(cast(cho, 50, jong))	# ㅣ+ゃ
+							follower = True
+					elif jung == 42:	# ㅛ
+						if cho != 11 or jong != 0:	# よ가 아닌 경우
+							word = chr(cast(cho, 50, jong))	# ㅣ+ょ
+							follower = True
 					if jong == 4:	# ㄴ 받침
 						word = chr(cast(cho, jung, 0))
+						follower = True
 					elif jong == 19:	# ㅅ 받침
 						word = chr(cast(cho, jung, 0))
-					for key in hiragana:
-						if hiragana[key] == word:
-							pwrite += key
-					if jong == 4:	# ㄴ 받침
-						pwrite += 'ん'
+					if word in hiratabl:
+						pwrite += hiratabl[word]
+					if follower == True:
+						if jung == 32:	# ㅑ
+							pwrite += 'ゃ'
+						elif jung == 42:	# ㅛ
+							pwrite += 'ょ'
+						if jong == 4:	# ㄴ 받침
+							pwrite += 'ん'
 				l = l[:pos+1] + '(' + pwrite + ')' + l[pos+1:]
 				pos += (len(pwrite)+2)
 			
@@ -294,8 +388,8 @@ for l in iterlyric:
 			pass
 		
 		print(l)
-		print(l2)
-		print(p)
+#		print(l2)
+#		print(p)
 		print(k)
 		print()
 		
